@@ -3,27 +3,45 @@ import { useParams } from "react-router-dom";
 import { Loader2Icon } from "lucide-react";
 import { dummyProjects } from "../assets/assets";
 import ProjectPreview from "../components/ProjectPreview";
-import type { Project } from "../types";
+import type { Project, Version } from "../types";
+import { toast } from 'sonner';
+import api from '@/configs/axios';
+import { authClient } from "@/lib/auth-client";
 const Preview = () => {
-
+    const { data: session, isPending} = authClient.useSession()
     const { projectId, versionId} = useParams()
     const [ code, setCode] = useState('');
     const [ loading, setLoading] = useState(true);
 
     const fetchCode = async () => {
-    setTimeout(()=>{
-        const code = dummyProjects.find(project=> project.id === projectId)?.
-        current_code;
-        if(code){
-            setCode(code);
-            setLoading(false)
+        try{
+                const {data} = await api.get(`/api/project/preview/${projectId}`)
+                console.log('API Response:', data);
+                const projectData = data.project || data;
+                console.log('Project Data:', projectData);
+                const codeToSet = projectData.current_code || projectData.code || '';
+                console.log('Code to set:', codeToSet.substring(0, 100));
+                setCode(codeToSet)
+                if(versionId && projectData.versions){
+                    projectData.versions.forEach((version: Version)=>{
+                        if(version.id === versionId){
+                            setCode(version.code)
+                        }
+                    })
+                }
+                setLoading(false)
         }
-    },2000)
-}
+        catch(error: any){
+            console.error('Error fetching code:', error);
+            toast.error(error?.response?.data?.message || error.message);
+        }
+        }
 
     useEffect(()=>{
-        fetchCode()
-    },[])
+        if(!isPending && session?.user){
+            fetchCode()
+        }
+    },[session?.user])
 
     if(loading){
         return (
@@ -35,12 +53,28 @@ const Preview = () => {
 
 
     return (
-        <div className="h-screen">
-            {code && <ProjectPreview project={{current_code: code} as Project}
-                isGenerating ={false} showEditorPanel={false}
-            
-            /> }
-            <h1>Preview</h1>
+        <div className="h-screen w-full">
+            {code ? (
+                <ProjectPreview project={{
+                    id: '',
+                    name: '',
+                    initial_prompt: '',
+                    current_code: code,
+                    createdAt: '',
+                    updatedAt: '',
+                    userId: '',
+                    conversation: [],
+                    versions: [],
+                    current_version_index: ''
+                }}
+                    isGenerating={false} showEditorPanel={false}
+                
+                /> 
+            ) : (
+                <div className='flex items-center justify-center h-full'>
+                    <p className='text-gray-400'>No preview available</p>
+                </div>
+            )}
         </div>
     )
 }

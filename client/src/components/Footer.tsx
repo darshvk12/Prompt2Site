@@ -11,7 +11,7 @@ const Footer = ()=> {
   return (
     <footer className='mt-24 bg-transparent'>
       <div className='max-w-6xl mx-auto px-4 py-8 text-center'>
-        <p className='text-gray-400 text-sm'>Copyright © 2025 SiteBuilder</p>
+        <p className='text-gray-400 text-sm'>Copyright © 2026 SiteBuilder</p>
       </div>
     </footer>
   )

@@ -4,29 +4,48 @@ import { Loader2Icon, PlusIcon, TrashIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { dummyProjects } from '../assets/assets';
 import Footer from '../components/Footer';
+import { toast } from 'sonner';
+import api from '@/configs/axios';
+import { authClient } from '@/lib/auth-client';
 
 const MyProjects: React.FC = () => {
+  const {data: session, isPending} = authClient.useSession()
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
   const navigate = useNavigate();
 
   const fetchProjects = async () => {
-    // TODO: replace with real API call
-    setProjects(dummyProjects)
-      setTimeout(()=>{
-setLoading(false)
-      },1000)
-      
-    
+      try {
+        const {data} = await api.get('/api/user/projects')
+        setProjects(data.projects)
+        setLoading(false)
+      } catch (error : any) {
+        console.log(error);
+        toast.error(error?.response?.data?.message || error.message)
+      }
   };
 
     const deleteProject = async (projectId:string) => {
-
-      
+      try{
+        const confirm = window.confirm('Are you sure you want to delete this project?');
+        if(!confirm) return;
+        const {data} = await api.delete(`/api/project/${projectId}`)
+        toast.success(data.message);
+        fetchProjects()
+      } catch(error: any){
+        console.log(error);
+        toast.error(error?.response?.data?.message || error.message)
+      }
     }
   useEffect(() => {
-    fetchProjects();
-  }, []);
+    if(session?.user && !isPending){
+      fetchProjects()
+    } else if(!isPending && !session?.user){
+      navigate('/')
+      toast('Please login to view your projects');
+    }
+  
+  }, [session?.user])
 
   return (
     <div className='relative min-h-screen'>
@@ -41,7 +60,7 @@ setLoading(false)
           <div className='flex items-center justify-between mb-12'>
             <h1 className='text-2xl font-medium text-white'>My Projects</h1>
             <button
-              onClick={() => navigate('/projects/new')}
+              onClick={() => navigate('/')}
               className='flex items-center gap-2 text-white px-3 sm:px-6 py-1 sm:py-2 rounded bg-gradient-to-br from-indigo-500 to-indigo-600 hover:opacity-90 active:scale-95 transition-all'
             >
               <PlusIcon size={18} /> Create New
@@ -99,7 +118,7 @@ setLoading(false)
           <h1 className='text-2xl sm:text-3xl font-bold text-white drop-shadow-md'>You have no projects yet!</h1>
 
           <button
-            onClick={() => navigate('/projects/new')}
+            onClick={() => navigate('/')}
             className='px-4 py-2 mt-3 rounded-md bg-[#6670FF] text-white text-base font-medium hover:brightness-105 active:scale-95 transition-transform'
           >
             Create New

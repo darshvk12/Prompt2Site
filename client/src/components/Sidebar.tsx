@@ -17,21 +17,20 @@ const Sidebar = ({isMenuOpen, project, setProject, isGenerating, setIsGenerating
             const [input, setInput] = useState('')
 
             const handleRollback = async (versionId: string) => {
-                if(!project) return;
-                const ver = project.versions.find(v => v.id === versionId);
-                if(!ver) return;
-                setIsGenerating(true);
-                setTimeout(()=>{
-                    setProject({...project, current_code: ver.code, current_version_index: ver.id});
-                    setIsGenerating(false);
-                }, 300);
+        
             }
+
             const handleRevisions = async (e:React.FormEvent) => {
                 e.preventDefault()
-                setIsGenerating(true)
-                setTimeout(()=>{
-                    setIsGenerating(false)
-                },3000)
+                let interval: number | undefined;
+                try {
+                    setIsGenerating(true);
+                    interval = setInterval(()=>{
+                        
+                    })
+                } catch (error) {
+                    
+                }
             }
 
 useEffect(()=>{

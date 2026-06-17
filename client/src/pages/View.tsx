@@ -4,16 +4,25 @@ import { dummyProjects } from "../assets/assets";
 import { Loader2Icon } from "lucide-react";
 import ProjectPreview from "../components/ProjectPreview";
 import type { Project } from "../types";
+import { toast } from 'sonner';
+import api from '@/configs/axios';
 
 const View = () => {
     const { projectId} = useParams();
     const [ code, setCode] = useState('')
     const [loading, setLoading] = useState(true)
 const fetchCode = async () => {
-    const code = dummyProjects.find(project=> project.id === projectId)?.current_code;
-    setTimeout(()=>{},2000)
-}
+    try {
+        const {data} = await api.get(`/api/project/published/${projectId}`);
+        setCode(data.code)
+        setLoading(false)
+        
+    } catch (error: any) {
+        toast.error(error?.response?.data?.message || error.message);
+        console.log(error);
+    }
 
+}
     useEffect(()=>{
         fetchCode()
     },[])
@@ -28,7 +37,18 @@ const fetchCode = async () => {
 
     return (
         <div className="h-screen">
-            {code && <ProjectPreview project={{current_code: code} as Project}
+            {code && <ProjectPreview project={{
+                id: '',
+                name: '',
+                initial_prompt: '',
+                current_code: code,
+                createdAt: '',
+                updatedAt: '',
+                userId: '',
+                conversation: [],
+                versions: [],
+                current_version_index: ''
+            }}
                 isGenerating ={false} showEditorPanel={false}
             
             /> }

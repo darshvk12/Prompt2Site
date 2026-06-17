@@ -11,7 +11,9 @@ import Navbar from './components/Navbar'
 import Loader from './components/Loader'
 import { Toaster } from 'sonner'
 import AuthPage from './pages/auth/AuthPage.tsx'
-import { Settings } from 'lucide-react'
+import { Settings as SettingsIcon } from 'lucide-react'
+import { Settings } from './pages/Settings.tsx'
+import Loading from './pages/Loading'
 
 const App = () => {
   const [pageLoading, setPageLoading] = useState(true)
@@ -26,24 +28,30 @@ const App = () => {
     const t = setTimeout(() => setPageLoading(false), 150)
     return () => clearTimeout(t)
   }, [location])
-return (
-  <div>
-  <Toaster />
-    {!hideNavbar && <Navbar/>}
-    <Routes>
-  <Route path='/' element={<Home />}  />
-  <Route path='/pricing' element ={<Pricing />}  />
-  <Route path='/projects/:projectId' element ={<Projects />}  />
-  <Route path='/projects' element ={<MyProjects />}  />
-  <Route path='/preview/:projectId' element ={<Preview />}  />
-  <Route path='/preview/:projectId/:versionId' element ={<Pricing />}  />
-  <Route path='/community' element ={<Community />}  />
-  <Route path='/view/:projectId' element ={<View />}  />
-  <Route path="/auth/:pathname" element={<AuthPage />} />
-  <Route path="/account/:settings" element={<Settings />} />
-</Routes>
-  </div>
-)
 
+  if (pageLoading) {
+    return <Loader />
+  }
+
+  return (
+    <div>
+      <Toaster />
+      {!hideNavbar && <Navbar />}
+      <Routes>
+        <Route path='/' element={<Home />} />
+        <Route path='/pricing' element={<Pricing />} />
+        <Route path='/projects/:projectId' element={<Projects />} />
+        <Route path='/projects' element={<MyProjects />} />
+        <Route path='/preview/:projectId' element={<Preview />} />
+        <Route path='/preview/:projectId/:versionId' element={<Pricing />} />
+        <Route path='/community' element={<Community />} />
+        <Route path='/view/:projectId' element={<View />} />
+        <Route path="/auth/:pathname" element={<AuthPage />} />
+        <Route path="/account/settings" element={<Settings />} />
+        <Route path='/loading' element={<Loading />} />
+      </Routes>
+    </div>
+  )
 }
-export default App 
+
+export default App
