@@ -26,8 +26,8 @@ export const  makeRevision = async (req: Request, res: Response) => {
             }
             
 
-            const currentProject = await prisma.websiteProject.findUnique({
-                where: {id: projectId,userId},
+            const currentProject = await prisma.websiteProject.findFirst({
+                where: {id: projectId, userId},
                 include: {versions: true}
             })
 
@@ -54,21 +54,29 @@ export const  makeRevision = async (req: Request, res: Response) => {
                             messages: [
                                 {
                                     role: 'system',
-                                    content: `You are a prompt enhancement specialist. Take the user's website request and expand it into a detailed, comprehensive prompt that will help create the best possible website design.
-            
-            Enhance this prompt by:
-            1. Adding specific design details (layout, color scheme, typography)
-            2. Specifying key sections and features
-            3. Describing the user experience and interactions
-            4. Including modern web design best practices
-            5. Mentioning responsive design requirements
-            6. Adding any missing but important features
-            
-            Return ONLY the enhanced prompt, nothing else. Make it detailed but concise (2-3 paragraphs max).`
+                                    content: `You are a prompt enhancement specialist for web design. Your task is to expand user requests into comprehensive, detailed specifications that will guide perfect website creation.
+
+ENHANCEMENT RULES:
+1. Add specific design details: layout structure, color palette, typography, spacing
+2. Define ALL sections/pages: header, hero, content, features, footer, etc.
+3. Specify interactive elements: buttons, forms, navigation, animations
+4. Detail user experience flows and interactions
+5. Include modern web design best practices and UX principles
+6. Specify responsive design requirements for mobile, tablet, desktop
+7. Add visual hierarchy, branding elements, and professional styling
+8. Include any missing important features or sections
+9. Be very specific about content and functionality
+
+IMPORTANT:
+- Make the enhanced prompt detailed and actionable for a web developer
+- Include specific color schemes, layouts, and component descriptions
+- Ensure EVERY detail mentioned will be implemented in the final website
+- Write 2-4 detailed paragraphs with concrete specifications
+- Return ONLY the enhanced prompt, no explanations or commentary`
                                 },
                                 {
                                     role: 'user',
-                                    content: `User's Request: "${message}"`
+                                    content: `User's Website Request: "${message}"\n\nPlease create a detailed, comprehensive prompt that will result in a complete, professional website with all requested features fully implemented.`
                                 }
                             ]
                         })
@@ -97,21 +105,29 @@ export const  makeRevision = async (req: Request, res: Response) => {
                             messages: [
                                 {
                                     role: 'system',
-                                    content: `You are an expert web developer.
+                                    content: `You are an expert web developer specializing in applying design updates to websites.
 
-                                    CRITICAL REQUIREMENTS:
-                                   - Return ONLY the complete updated HTML code with the requested changes.
-                                   - Use Tailwind CSS for ALL styling (NO custom CSS).
-                                   - Use Tailwind utility classes for all styling changes.
-                                   - Include all JavaScript in <script> tags before closing </body>.
-                                   - Make sure it's a complete, standalone HTML document with Tailwind CSS.
-                                   - Return the HTML Code Only, nothing else.
-                                   
-                                   Apply the requested changes while maintaining the Tailwind CSS styling approach.`
+CRITICAL REQUIREMENTS:
+- Output ONLY valid, complete HTML code (the entire updated website)
+- Use Tailwind CSS for ALL styling - NO custom CSS
+- Include Tailwind script: <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+- Use Tailwind utility classes for styling, animations, and responsiveness
+- Include all interactive JavaScript functionality in <script> tags
+- Maintain semantic HTML structure with proper heading hierarchy
+- Use responsive design with Tailwind breakpoints (sm:, md:, lg:, xl:)
+- Add animations and transitions using Tailwind classes
+- Implement EVERY change and enhancement mentioned in the request
+
+OUTPUT RULES:
+1. Return ONLY complete HTML code
+2. No explanations, comments, or markdown
+3. No code fences, triple backticks, or extra formatting
+4. Code must be ready to render immediately
+5. All changes must be visible and functional`
                                 },
                                 {
                                     role: 'user',
-                                    content: `Here is the current website code: "${currentProject.current_code}" The user wants this change: "${enhancedPrompt}"`
+                                    content: `Update this website HTML with the following changes/enhancements:\n\n${enhancedPrompt}\n\nMake sure to implement ALL the requested changes and maintain the overall structure while improving the design and functionality as requested.`
                                 }
                             ]
                         })
@@ -122,7 +138,7 @@ export const  makeRevision = async (req: Request, res: Response) => {
                              await prisma.conversation.create({
                             data: {
                                 role: 'assistant',
-                                content: 'I have made the changes to your website? You can now preview it',
+                                content: 'Unable to apply changes to your website. Please try again.',
                                 projectId: projectId
                             }
                         })
@@ -130,14 +146,35 @@ export const  makeRevision = async (req: Request, res: Response) => {
                             where: {id: userId},
                             data: {credits: {increment: 5}}
                         })
-                        return;
+                        return res.status(500).json({message: 'Unable to generate website changes'});
+                        }
+
+                        // Clean HTML - remove markdown, code fences, and extra formatting
+                        const cleanCode = code
+                            .replace(/^```(?:html|HTML)?\n?/gm, '')
+                            .replace(/\n?```$/gm, '')
+                            .replace(/^```(?:html|HTML)?$/gm, '')
+                            .replace(/^'''$/gm, '')
+                            .trim();
+                        
+                        if(!cleanCode){
+                             await prisma.conversation.create({
+                            data: {
+                                role: 'assistant',
+                                content: 'Unable to generate valid website code. Please try again.',
+                                projectId: projectId
+                            }
+                        })
+                        await prisma.user.update({
+                            where: {id: userId},
+                            data: {credits: {increment: 5}}
+                        })
+                        return res.status(500).json({message: 'Unable to generate valid website code'});
                         }
 
                         const version = await prisma.version.create({
                             data: {
-                                code: code.replace(/```[a-z]*\n?/gi,'')
-                                .replace(/'''$/g,'')
-                                .trim(),
+                                code: cleanCode,
                                 description: 'changes made',
                                 projectId
                             }
@@ -154,9 +191,7 @@ export const  makeRevision = async (req: Request, res: Response) => {
                         await prisma.websiteProject.update({
                             where: {id: projectId},
                             data: {
-                                current_code: code.replace(/```[a-z]*\n?/gi,'')
-                                .replace(/'''$/g,'')
-                                .trim(),
+                                current_code: cleanCode,
                                 current_version_index: version.id
 
                             }
@@ -167,7 +202,7 @@ export const  makeRevision = async (req: Request, res: Response) => {
     catch (error : any){
          await prisma.user.update({
                 where: {id: userId},
-                data: {credits: {decrement: 5}}
+                data: {credits: {increment: 5}}
             })
         console.log(error.code || error.message);
         res.status(500).json({ message: error.message});
@@ -183,7 +218,7 @@ try{
     }
     const { projectId, versionId} = req.params;
 
-    const project = await prisma.websiteProject.findUnique({
+    const project = await prisma.websiteProject.findFirst({
         where: {id: projectId, userId},
         include: {versions: true}
     })
@@ -197,7 +232,7 @@ try{
         return res.status(404).json({message: 'Version not found'});
     }
     await prisma.websiteProject.update({
-        where: {id: projectId, userId},
+        where: {id: projectId},
         data: {
             current_code: version.code,
             current_version_index: version.id
@@ -229,8 +264,16 @@ export const deleteProject = async (req: Request, res: Response) =>{
        const userId = req.userId;
        const { projectId} = req.params;
 
+       const project = await prisma.websiteProject.findFirst({
+         where: {id: projectId, userId}
+       })
+
+       if(!project){
+         return res.status(404).json({message: 'Project not found'});
+       }
+
        await prisma.websiteProject.delete({
-        where: {id: projectId, userId},
+        where: {id: project.id},
        })
 
        res.json({message: 'Project deleted successfully'});
@@ -320,7 +363,7 @@ export const saveProjectCode = async (req: Request, res: Response) => {
          return res.status(400).json({message: 'Code is required'});   
         }
 
-        const project = await prisma.websiteProject.findUnique({
+        const project = await prisma.websiteProject.findFirst({
             where: {id: projectId, userId}
         })
 

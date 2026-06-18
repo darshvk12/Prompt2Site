@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { BotIcon, EyeIcon, Loader2Icon, SendIcon, UserIcon } from 'lucide-react'
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
+import api from '@/configs/axios'
 import type { Project, Message, Version } from '../types'
 interface SidebarProps {
     isMenuOpen: boolean;
@@ -17,19 +19,36 @@ const Sidebar = ({isMenuOpen, project, setProject, isGenerating, setIsGenerating
             const [input, setInput] = useState('')
 
             const handleRollback = async (versionId: string) => {
-        
+                try {
+                    setIsGenerating(true)
+                    await api.get(`/api/project/rollback/${project.id}/${versionId}`)
+                    const { data } = await api.get(`/api/user/project/${project.id}`)
+                    setProject(data.project)
+                    toast.success('Version rolled back successfully')
+                } catch (error: any) {
+                    toast.error(error?.response?.data?.message || error.message)
+                    console.log(error)
+                } finally {
+                    setIsGenerating(false)
+                }
             }
 
             const handleRevisions = async (e:React.FormEvent) => {
                 e.preventDefault()
-                let interval: number | undefined;
+                if(!input.trim()) return;
+
                 try {
-                    setIsGenerating(true);
-                    interval = setInterval(()=>{
-                        
-                    })
-                } catch (error) {
-                    
+                    setIsGenerating(true)
+                    await api.post(`/api/project/revision/${project.id}`, { message: input.trim() })
+                    const { data } = await api.get(`/api/user/project/${project.id}`)
+                    setProject(data.project)
+                    setInput('')
+                    toast.success('Website changes applied')
+                } catch (error: any) {
+                    toast.error(error?.response?.data?.message || error.message)
+                    console.log(error)
+                } finally {
+                    setIsGenerating(false)
                 }
             }
 

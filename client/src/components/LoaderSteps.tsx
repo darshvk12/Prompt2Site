@@ -1,5 +1,5 @@
 import { CircleIcon, ScanLineIcon, SquareIcon, TriangleIcon } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const steps = [
     {icon: ScanLineIcon, label: "Analyzing your request..."},
@@ -34,7 +34,7 @@ const LoaderSteps = ()=> {
             <div className="absolute inset-0 rounded-full border border-indigo-400 
             animate-ping opacity-30"></div>
             <div className="absolute inset-4 rounded-full border border-purple-400/20"></div>
-            <div className="w-8 h-8 text-white opacity-80 animate-bounce"></div>
+            <Icon className="relative z-10 text-white" size={40} />
         </div>
         {/* Step label - fade using transition only (no invisible start) */}
         <p key={current} className="mt-8 text-lg font-light text-white/90

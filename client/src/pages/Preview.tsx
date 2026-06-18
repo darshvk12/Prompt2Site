@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Loader2Icon } from "lucide-react";
-import { dummyProjects } from "../assets/assets";
 import ProjectPreview from "../components/ProjectPreview";
-import type { Project, Version } from "../types";
+import type { Version } from "../types";
 import { toast } from 'sonner';
 import api from '@/configs/axios';
 import { authClient } from "@/lib/auth-client";

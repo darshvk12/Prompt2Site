@@ -11,7 +11,6 @@ import Navbar from './components/Navbar'
 import Loader from './components/Loader'
 import { Toaster } from 'sonner'
 import AuthPage from './pages/auth/AuthPage.tsx'
-import { Settings as SettingsIcon } from 'lucide-react'
 import { Settings } from './pages/Settings.tsx'
 import Loading from './pages/Loading'
 
@@ -43,7 +42,7 @@ const App = () => {
         <Route path='/projects/:projectId' element={<Projects />} />
         <Route path='/projects' element={<MyProjects />} />
         <Route path='/preview/:projectId' element={<Preview />} />
-        <Route path='/preview/:projectId/:versionId' element={<Pricing />} />
+        <Route path='/preview/:projectId/:versionId' element={<Preview />} />
         <Route path='/community' element={<Community />} />
         <Route path='/view/:projectId' element={<View />} />
         <Route path="/auth/:pathname" element={<AuthPage />} />

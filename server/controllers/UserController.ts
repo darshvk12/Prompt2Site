@@ -83,21 +83,29 @@ export const  createUserProject = async (req: Request, res: Response) => {
                             messages: [
                                 {
                                     role: 'system',
-                                    content: `You are a prompt enhancement specialist. Take the user's website request and expand it into a detailed, comprehensive prompt that will help create the best possible website design.
-            
-            Enhance this prompt by:
-            1. Adding specific design details (layout, color scheme, typography)
-            2. Specifying key sections and features
-            3. Describing the user experience and interactions
-            4. Including modern web design best practices
-            5. Mentioning responsive design requirements
-            6. Adding any missing but important features
-            
-            Return ONLY the enhanced prompt, nothing else. Make it detailed but concise (2-3 paragraphs max).`
+                                    content: `You are a prompt enhancement specialist for web design. Your task is to expand user requests into comprehensive, detailed specifications that will guide perfect website creation.
+
+ENHANCEMENT RULES:
+1. Add specific design details: layout structure, color palette, typography, spacing
+2. Define ALL sections/pages: header, hero, content, features, footer, etc.
+3. Specify interactive elements: buttons, forms, navigation, animations
+4. Detail user experience flows and interactions
+5. Include modern web design best practices and UX principles
+6. Specify responsive design requirements for mobile, tablet, desktop
+7. Add visual hierarchy, branding elements, and professional styling
+8. Include any missing important features or sections
+9. Be very specific about content and functionality
+
+IMPORTANT:
+- Make the enhanced prompt detailed and actionable for a web developer
+- Include specific color schemes, layouts, and component descriptions
+- Ensure EVERY detail mentioned will be implemented in the final website
+- Write 2-4 detailed paragraphs with concrete specifications
+- Return ONLY the enhanced prompt, no explanations or commentary`
                                 },
                                 {
                                     role: 'user',
-                                    content: initial_prompt
+                                    content: `User's Website Request: "${initial_prompt}"\n\nPlease create a detailed, comprehensive prompt that will result in a complete, professional website with all requested features fully implemented.`
                                 }
                             ]
                         })
@@ -126,36 +134,40 @@ export const  createUserProject = async (req: Request, res: Response) => {
                             messages: [
                                 {
                                 role: 'system',
-                                content: ` You are an expert web developer. Create a complete,
-                                production-ready, single-page website based on this request: "${enhancedPrompt}"
+                                content: `You are an expert web developer creating high-quality, feature-complete websites.
 
-                                CRITICIAL REQUIREMENTS:
-                                - You MUST output valid HTML ONLY.
-                                - Use Tailwind CSS for ALL styling
-                                - Include this EXACT script in the <head>: <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-                                - Use Tailwind utility classes extensively for styling, animations and responsiveness
-                                - Make it fully functional and interactive with JavaScript in <script> tag before closing </body>
-                                - Use modern, beautiful design with great UX using Tailwind classes
-                                - Make it responsive using Tailwind responsive classes ( sm:, md:, lg:, xl:)
-                                - Use Tailwind animations and transitions ( animate-*, transition-*)
-                                - Include all necessary meta tags
-                                - Use Google Fonts CON if needed for custom fonts
-                                - Use placeholder images from https://placehold.co/600x400
-                                - Use Tailwind gradient classes for beautiful backgrounds 
-                                - Make sure all buttons, cards, and components use Tailwind styling
+CRITICAL REQUIREMENTS:
+- Output ONLY valid, complete HTML code
+- Use Tailwind CSS (v4) for ALL styling - NO custom CSS
+- Include: <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+- Use Tailwind classes for styling, animations, and responsiveness
+- Create fully interactive JavaScript functionality in <script> tags
+- Include proper meta tags, charset, viewport configuration
+- Use semantic HTML structure with proper heading hierarchy
+- Use professional placeholder images from https://placehold.co/1200x600 or https://placehold.co/600x400
+- Implement responsive design with sm:, md:, lg:, xl: Tailwind breakpoints
+- Add animations, transitions, and hover effects using Tailwind
+- Include accessible form inputs, buttons, and interactive elements
+- Ensure all mentioned features are FULLY IMPLEMENTED in the code
 
-                                CRITICAL HAND RULES:
-                                1. You MUST put ALL output ONLY into message.content
-                                2. You MUST NOT place anything in "reasoning", "analysis", "reasoning_details", or any hidden fields.
-                                3. You MUST NOT include internal thoughts, explanations, analysis, comments, ore markdown.
-                                4. Do NOT include markdown, explanations, notes, or code fences.
-                                
-                                The HTML should be complete and ready to render as-is with Tailwind CSS.
-                                `
+FEATURE IMPLEMENTATION REQUIREMENTS:
+- Implement EVERY section and feature mentioned in the request
+- Add proper navigation between sections
+- Include interactive elements (buttons, forms, modals) that actually work
+- Ensure visual hierarchy using typography and spacing
+- Use Tailwind gradient classes for backgrounds and accents
+- Create a cohesive, professional design
+
+OUTPUT RULES:
+1. Output ONLY the HTML code - nothing else
+2. No explanations, comments, or markdown formatting
+3. No code fences or triple backticks
+4. Direct HTML output ready to render
+5. All content must be visible and functional`
                                 },
                                 {
                                     role: 'user',
-                                    content: enhancedPrompt || ''
+                                    content: `Create a complete website based on this detailed specification:\n\n${enhancedPrompt || ''}`
                                 }
                             ]
                         })
@@ -177,12 +189,32 @@ export const  createUserProject = async (req: Request, res: Response) => {
                         return;
 
                         }
+                        // Clean HTML - remove markdown, code fences, and extra formatting
+                        const cleanCode = code
+                            .replace(/^```(?:html|HTML)?\n?/gm, '')
+                            .replace(/\n?```$/gm, '')
+                            .replace(/^```(?:html|HTML)?$/gm, '')
+                            .replace(/^'''$/gm, '')
+                            .trim();
+                        
+                        if(!cleanCode){
+                            await prisma.conversation.create({
+                            data: {
+                                role: 'assistant',
+                                content: "Unable to generate valid website code, please try again",
+                                projectId: project.id
+                            }
+                        })
+                        await prisma.user.update({
+                            where: {id: userId},
+                        data: {credits: {increment: 5}}
+                    })
+                        return;
+                        }
                         // Create Version for the Project
                         const version = await prisma.version.create({
                             data: {
-                                code: code.replace(/```[a-z]*\n?/gi,'')
-                                .replace(/'''$/g,'')
-                                .trim(),
+                                code: cleanCode,
                                 description: 'Initial version',
                                 projectId: project.id                        
                             }
@@ -199,9 +231,7 @@ export const  createUserProject = async (req: Request, res: Response) => {
                         await prisma.websiteProject.update({
                             where: {id: project.id},
                             data: {
-                                    current_code: code.replace(/```[a-z]*\n?/gi,'')
-                                .replace(/'''$/g,'')
-                                .trim(),
+                                    current_code: cleanCode,
                                 current_version_index: version.id
                             }
                         })

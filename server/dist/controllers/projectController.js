@@ -24,7 +24,7 @@ const makeRevision = async (req, res) => {
         if (!message || message.trim() === '') {
             return res.status(400).json({ message: 'Please Enter a valid prompt' });
         }
-        const currentProject = await prisma_js_1.default.websiteProject.findUnique({
+        const currentProject = await prisma_js_1.default.websiteProject.findFirst({
             where: { id: projectId, userId },
             include: { versions: true }
         });
@@ -44,7 +44,7 @@ const makeRevision = async (req, res) => {
         });
         // Enhance User Prompt 
         const promptEnhanceResponse = await openai_js_1.default.chat.completions.create({
-            model: 'qwen/qwen3-coder:free',
+            model: 'openai/gpt-oss-20b',
             messages: [
                 {
                     role: 'system',
@@ -83,7 +83,7 @@ const makeRevision = async (req, res) => {
         });
         // Generate Website Code
         const codeGenerationResponse = await openai_js_1.default.chat.completions.create({
-            model: 'qwen/qwen3-coder:free ',
+            model: 'openai/gpt-oss-20b',
             messages: [
                 {
                     role: 'system',
@@ -150,7 +150,7 @@ const makeRevision = async (req, res) => {
     catch (error) {
         await prisma_js_1.default.user.update({
             where: { id: userId },
-            data: { credits: { decrement: 5 } }
+            data: { credits: { increment: 5 } }
         });
         console.log(error.code || error.message);
         res.status(500).json({ message: error.message });
@@ -165,7 +165,7 @@ const rollbackToVersion = async (req, res) => {
             return res.status(401).json({ message: 'Unauthorized' });
         }
         const { projectId, versionId } = req.params;
-        const project = await prisma_js_1.default.websiteProject.findUnique({
+        const project = await prisma_js_1.default.websiteProject.findFirst({
             where: { id: projectId, userId },
             include: { versions: true }
         });
@@ -203,8 +203,14 @@ const deleteProject = async (req, res) => {
     try {
         const userId = req.userId;
         const { projectId } = req.params;
+        const project = await prisma_js_1.default.websiteProject.findFirst({
+            where: { id: projectId, userId }
+        });
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
         await prisma_js_1.default.websiteProject.delete({
-            where: { id: projectId, userId },
+            where: { id: project.id },
         });
         res.json({ message: 'Project deleted successfully' });
     }
@@ -282,7 +288,7 @@ const saveProjectCode = async (req, res) => {
         if (!code) {
             return res.status(400).json({ message: 'Code is required' });
         }
-        const project = await prisma_js_1.default.websiteProject.findUnique({
+        const project = await prisma_js_1.default.websiteProject.findFirst({
             where: { id: projectId, userId }
         });
         if (!project) {

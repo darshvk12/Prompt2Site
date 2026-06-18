@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import type { Project } from '../types'
 import { ArrowBigDownDashIcon, EyeIcon, EyeOffIcon, FullscreenIcon, LaptopIcon, Loader2Icon, MessageSquareIcon, SaveIcon, SmartphoneIcon, TabletIcon, XIcon } from 'lucide-react'
@@ -6,7 +6,6 @@ import Sidebar from '../components/Sidebar'
 import ProjectPreview, { type ProjectPreviewRef } from '../components/ProjectPreview'
 import api from '@/configs/axios'
 import { toast } from 'sonner'
-import { auth0 } from 'better-auth/plugins'
 import { authClient } from '@/lib/auth-client'
 const Projects = () => {
     const {projectId} = useParams()
@@ -44,6 +43,7 @@ const Projects = () => {
         setIsSaving(true);
         try {
             const {data} = await api.put(`/api/project/save/${projectId}`,{code});
+            setProject((prev)=> prev ? ({...prev, current_code: code}) : prev)
             toast.success(data.message)
         } catch (error : any) {
             toast.error(error?.response?.data?.message || error.message);

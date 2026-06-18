@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface EditorPanelProps {
     selectedElement: {
@@ -37,13 +37,7 @@ const handleChange = (field: string, value:string)=>{
     onUpdate({[field]: value});
 }
 
-    const handleStyleChange = (styleName: string, value:string)=>{
-        const newStyles = {...values.styles, [styleName]: value};
-        setValues({...values, styles: newStyles});
-        onUpdate({styles: {[styleName]:value}})
-    }
-
-    return (
+        return (
         <div className='absolute top-4 right-4 w-80 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 animate-fade-in fade-in'>
             <div className='flex justify-between items-center mb-4'>
                 <h3 className='font-semibold text-gray-800'>Edit Element</h3>
@@ -62,7 +56,7 @@ const handleChange = (field: string, value:string)=>{
             <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Class Name </label>
                 <input type='text' value={values.className || ''} onChange={(e)=> 
-                handleChange('text', e.target.value)} className='w-full text-sm 
+                handleChange('className', e.target.value)} className='w-full text-sm 
                 p-2 border border-gray-400 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none min-h-20' />
                 </div>
             <div className='grid grid-cols-2 gap-3'>

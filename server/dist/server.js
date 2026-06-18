@@ -19,7 +19,7 @@ const corsOptions = {
 };
 app.use((0, cors_1.default)(corsOptions));
 app.post('/api/stripe', express_1.default.raw({ type: 'application/json' }), stripeWebhook_js_1.stripeWebhook);
-app.all('/api/auth/{*any}', (0, node_1.toNodeHandler)(auth_1.auth));
+app.use('/api/auth', (0, node_1.toNodeHandler)(auth_1.auth));
 app.use(express_1.default.json({ limit: '50mb' }));
 app.use('/api/user', UserRoutes_js_1.default);
 app.get('/', (req, res) => {
